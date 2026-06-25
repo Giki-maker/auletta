@@ -662,15 +662,31 @@ async function doRegister() {
     // Controlla tessera duplicata
     const allProfiles = await dbGetAllProfiles();
     if (allProfiles.find(p => p.tessera === tessera)) { errEl.textContent='Tessera già registrata.'; hideLoading(); return; }
-    // Crea utente in Supabase Auth (password cifrata)
-    const authData = await authSignUp(email, pass);
-    if (!authData.user) throw new Error('Errore creazione account.');
-    // Login immediato per ottenere il token
-    const session = await authSignIn(email, pass);
-    state.accessToken = session.access_token;
+
+    // Signup con Supabase Auth
+    const signupRes = await fetch(`${SUPA_URL}/auth/v1/signup`, {
+      method: 'POST',
+      headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    });
+    const signupData = await signupRes.json();
+    if (!signupRes.ok) throw new Error(signupData.msg || signupData.message || signupData.error_description || JSON.stringify(signupData));
+
+    // Login immediato per ottenere token e user id
+    const loginRes = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    });
+    const loginData = await loginRes.json();
+    if (!loginRes.ok) throw new Error(loginData.error_description || loginData.message || 'Login fallito dopo registrazione');
+
+    state.accessToken = loginData.access_token;
+    const userId = loginData.user.id;
+
     // Salva profilo
-    await dbInsertProfile({ id: authData.user.id, name, tessera, role: 'user' });
-    state.currentUser = { id: authData.user.id, email, name, tessera, role: 'user' };
+    await dbInsertProfile({ id: userId, name, tessera, role: 'user' });
+    state.currentUser = { id: userId, email, name, tessera, role: 'user' };
     errEl.textContent = '';
     toast('Benvenuto, ' + name + '!', 'success');
     await enterApp();
