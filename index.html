@@ -356,19 +356,15 @@ input:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgb
       <!-- RECOVER -->
       <div id="formRecover" style="display:none">
         <p class="auth-title">Recupera password</p>
-        <p class="auth-sub">Inserisci email e numero di tessera per recuperare la tua password.</p>
+        <p class="auth-sub">Inserisci la tua email e ti mandiamo un link per reimpostare la password.</p>
         <div id="recoverResult"></div>
         <div id="recoverFormFields">
           <div class="form-group">
             <label>Email</label>
             <input type="email" id="recEmail" placeholder="nome@example.com">
-          </div>
-          <div class="form-group">
-            <label>Numero di tessera</label>
-            <input type="text" id="recTessera" placeholder="Es. T-00123">
             <div class="form-error" id="recError"></div>
           </div>
-          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doRecover()">Mostra password</button>
+          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doRecover()">Invia link di recupero</button>
         </div>
         <div style="margin-top:12px;text-align:center">
           <span class="recover-link" onclick="switchAuthTab('login')">← Torna al login</span>
@@ -527,18 +523,21 @@ const MONTHS_IT = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Lugl
 
 let state = {
   currentUser: null, selectedDate: new Date(), calViewDate: new Date(),
-  deleteTarget: null, activeTab: 'calendar', bookingsCache: [], cacheDate: null
+  deleteTarget: null, activeTab: 'calendar', bookingsCache: [], cacheDate: null,
+  accessToken: null
 };
 let pendingDate, pendingHour;
 
-// ── SUPABASE ───────────────────────────────────────────────────
+// ── SUPABASE REST ──────────────────────────────────────────────
 async function supa(method, table, body, params) {
   let url = `${SUPA_URL}/rest/v1/${table}`;
   if (params) url += '?' + new URLSearchParams(params).toString();
+  const token = state.accessToken || SUPA_KEY;
   const opts = {
     method,
     headers: {
-      'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY,
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + token,
       'Content-Type': 'application/json',
       'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
     }
@@ -549,12 +548,46 @@ async function supa(method, table, body, params) {
   if (res.status === 204) return null;
   return res.json();
 }
-async function dbGetUser(email)    { return supa('GET','users',null,{email:`eq.${email}`,select:'*'}); }
-async function dbGetUsers()        { return supa('GET','users',null,{select:'*'}); }
-async function dbInsertUser(u)     { return supa('POST','users',u); }
-async function dbGetBookings()     { return supa('GET','bookings',null,{select:'*',order:'date.asc,hour.asc'}); }
-async function dbInsertBooking(b)  { return supa('POST','bookings',b); }
-async function dbDeleteBooking(id) { return supa('DELETE','bookings',null,{id:`eq.${id}`}); }
+
+// ── SUPABASE AUTH API ──────────────────────────────────────────
+async function authSignUp(email, password) {
+  const res = await fetch(`${SUPA_URL}/auth/v1/signup`, {
+    method: 'POST',
+    headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.msg || data.message || 'Errore registrazione');
+  return data;
+}
+
+async function authSignIn(email, password) {
+  const res = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error_description || data.message || 'Credenziali non valide');
+  return data; // { access_token, user: { id, email } }
+}
+
+async function authResetPassword(email) {
+  const res = await fetch(`${SUPA_URL}/auth/v1/recover`, {
+    method: 'POST',
+    headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+  if (!res.ok) { const d = await res.json().catch(()=>({})); throw new Error(d.message || 'Errore'); }
+}
+
+// ── DB HELPERS ─────────────────────────────────────────────────
+async function dbGetProfile(userId)    { return supa('GET','profiles',null,{id:`eq.${userId}`,select:'*'}); }
+async function dbGetAllProfiles()      { return supa('GET','profiles',null,{select:'*'}); }
+async function dbInsertProfile(p)      { return supa('POST','profiles',p); }
+async function dbGetBookings()         { return supa('GET','bookings',null,{select:'*',order:'date.asc,hour.asc'}); }
+async function dbInsertBooking(b)      { return supa('POST','bookings',b); }
+async function dbDeleteBooking(id)     { return supa('DELETE','bookings',null,{id:`eq.${id}`}); }
 
 async function getBookings(force) {
   const now = Date.now();
@@ -586,7 +619,7 @@ function getUserWeekCount(userId, weekKey, bookings) {
 function showLoading(msg) { document.getElementById('loadingMsg').textContent=msg||'Caricamento…'; document.getElementById('loadingOverlay').style.display='flex'; }
 function hideLoading()    { document.getElementById('loadingOverlay').style.display='none'; }
 
-// ── AUTH ───────────────────────────────────────────────────────
+// ── AUTH TABS ──────────────────────────────────────────────────
 function switchAuthTab(tab) {
   document.getElementById('tabLogin').classList.toggle('active', tab==='login');
   document.getElementById('tabRegister').classList.toggle('active', tab==='register');
@@ -595,81 +628,101 @@ function switchAuthTab(tab) {
   document.getElementById('formRecover').style.display  = tab==='recover'  ? '' : 'none';
 }
 
+// ── LOGIN ──────────────────────────────────────────────────────
 async function doLogin() {
-  const email=document.getElementById('loginEmail').value.trim();
-  const pass=document.getElementById('loginPassword').value;
-  const errEl=document.getElementById('loginError');
-  if (!email||!pass) { errEl.textContent='Compila tutti i campi.'; return; }
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  if (!email || !pass) { errEl.textContent='Compila tutti i campi.'; return; }
   showLoading('Accesso in corso…');
   try {
-    const users=await dbGetUser(email);
-    if (!users.length||users[0].password!==pass) { errEl.textContent='Email o password non corretti.'; hideLoading(); return; }
-    errEl.textContent=''; state.currentUser=users[0]; await enterApp();
-  } catch(e) { errEl.textContent='Errore: '+e.message; hideLoading(); }
+    const session = await authSignIn(email, pass);
+    state.accessToken = session.access_token;
+    const profiles = await dbGetProfile(session.user.id);
+    if (!profiles.length) throw new Error('Profilo non trovato. Contatta l\'amministratore.');
+    state.currentUser = { id: session.user.id, email: session.user.email, ...profiles[0] };
+    errEl.textContent = '';
+    await enterApp();
+  } catch(e) { errEl.textContent = e.message; hideLoading(); }
 }
 
+// ── REGISTER ───────────────────────────────────────────────────
 async function doRegister() {
-  const name=document.getElementById('regName').value.trim();
-  const email=document.getElementById('regEmail').value.trim();
-  const tessera=document.getElementById('regTessera').value.trim();
-  const pass=document.getElementById('regPassword').value;
-  const errEl=document.getElementById('regError');
-  if (!name) { errEl.textContent='Inserisci il tuo nome.'; return; }
+  const name    = document.getElementById('regName').value.trim();
+  const email   = document.getElementById('regEmail').value.trim();
+  const tessera = document.getElementById('regTessera').value.trim();
+  const pass    = document.getElementById('regPassword').value;
+  const errEl   = document.getElementById('regError');
+  if (!name)    { errEl.textContent='Inserisci il tuo nome.'; return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent='Email non valida.'; return; }
   if (!tessera) { errEl.textContent='Inserisci il numero di tessera.'; return; }
-  if (pass.length<6) { errEl.textContent='Password di almeno 6 caratteri.'; return; }
+  if (pass.length < 6) { errEl.textContent='Password di almeno 6 caratteri.'; return; }
   showLoading('Creazione account…');
   try {
-    const existing=await dbGetUser(email);
-    if (existing.length) { errEl.textContent='Email già registrata.'; hideLoading(); return; }
-    const allUsers=await dbGetUsers();
-    if (allUsers.find(u=>u.tessera===tessera&&u.tessera!=='ADMIN-0')) { errEl.textContent='Tessera già registrata.'; hideLoading(); return; }
-    const newUser=await dbInsertUser({name,email,tessera,password:pass,role:'user'});
-    errEl.textContent=''; state.currentUser=newUser[0];
-    toast('Benvenuto, '+name+'!','success'); await enterApp();
-  } catch(e) { errEl.textContent='Errore: '+e.message; hideLoading(); }
+    // Controlla tessera duplicata
+    const allProfiles = await dbGetAllProfiles();
+    if (allProfiles.find(p => p.tessera === tessera)) { errEl.textContent='Tessera già registrata.'; hideLoading(); return; }
+    // Crea utente in Supabase Auth (password cifrata)
+    const authData = await authSignUp(email, pass);
+    if (!authData.user) throw new Error('Errore creazione account.');
+    // Login immediato per ottenere il token
+    const session = await authSignIn(email, pass);
+    state.accessToken = session.access_token;
+    // Salva profilo
+    await dbInsertProfile({ id: authData.user.id, name, tessera, role: 'user' });
+    state.currentUser = { id: authData.user.id, email, name, tessera, role: 'user' };
+    errEl.textContent = '';
+    toast('Benvenuto, ' + name + '!', 'success');
+    await enterApp();
+  } catch(e) { errEl.textContent = e.message; hideLoading(); }
 }
 
+// ── RECOVER PASSWORD (via email) ───────────────────────────────
 async function doRecover() {
-  const email=document.getElementById('recEmail').value.trim();
-  const tessera=document.getElementById('recTessera').value.trim();
-  const errEl=document.getElementById('recError');
-  showLoading('Ricerca account…');
+  const email = document.getElementById('recEmail').value.trim();
+  const errEl = document.getElementById('recError');
+  if (!email) { errEl.textContent='Inserisci la tua email.'; return; }
+  showLoading('Invio email…');
   try {
-    const users=await dbGetUser(email);
-    const user=users.find(u=>u.tessera===tessera);
+    await authResetPassword(email);
     hideLoading();
-    if (!user) { errEl.textContent='Nessun account corrisponde a questi dati.'; return; }
-    errEl.textContent='';
-    document.getElementById('recoverFormFields').style.display='none';
-    document.getElementById('recoverResult').innerHTML=`
-      <div class="recovery-box">💡 <strong>Password trovata!</strong><br>Account: <em>${escHtml(user.email)}</em><br>Password: <strong>${escHtml(user.password)}</strong></div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:8px" onclick="switchAuthTab('login')">Torna al login</button>`;
-  } catch(e) { errEl.textContent='Errore: '+e.message; hideLoading(); }
+    errEl.textContent = '';
+    document.getElementById('recoverFormFields').style.display = 'none';
+    document.getElementById('recoverResult').innerHTML = `
+      <div class="recovery-box">
+        ✉️ <strong>Email inviata!</strong><br>
+        Controlla la casella di posta di <em>${escHtml(email)}</em>.<br>
+        Troverai un link per reimpostare la password.
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="switchAuthTab('login')">Torna al login</button>`;
+  } catch(e) { errEl.textContent = e.message; hideLoading(); }
 }
 
-function doLogout() {
-  state.currentUser=null; state.bookingsCache=[]; state.cacheDate=null;
+// ── LOGOUT ─────────────────────────────────────────────────────
+async function doLogout() {
+  state.currentUser = null; state.accessToken = null;
+  state.bookingsCache = []; state.cacheDate = null;
   document.getElementById('pageApp').classList.remove('active');
   document.getElementById('pageAuth').classList.add('active');
-  document.getElementById('headerRight').innerHTML='';
-  document.getElementById('loginEmail').value='';
-  document.getElementById('loginPassword').value='';
-  document.getElementById('recoverFormFields').style.display='';
-  document.getElementById('recoverResult').innerHTML='';
+  document.getElementById('headerRight').innerHTML = '';
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('recoverFormFields').style.display = '';
+  document.getElementById('recoverResult').innerHTML = '';
   switchAuthTab('login');
 }
 
+// ── ENTER APP ──────────────────────────────────────────────────
 async function enterApp() {
   document.getElementById('pageAuth').classList.remove('active');
   document.getElementById('pageApp').classList.add('active');
-  const u=state.currentUser;
-  const initials=u.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  document.getElementById('headerRight').innerHTML=`
-    <div class="user-chip"><div class="avatar">${initials}</div><span style="display:none" class="d-sm-inline">${escHtml(u.name.split(' ')[0])}</span></div>
+  const u = state.currentUser;
+  const initials = u.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('headerRight').innerHTML = `
+    <div class="user-chip"><div class="avatar">${initials}</div><span style="font-size:13px;color:rgba(255,255,255,0.75)">${escHtml(u.name.split(' ')[0])}</span></div>
     <button class="btn btn-ghost btn-sm" onclick="doLogout()">Esci</button>`;
-  if (u.role==='admin') document.getElementById('adminTabBtn').style.display='';
-  state.selectedDate=new Date(); state.calViewDate=new Date();
+  if (u.role === 'admin') document.getElementById('adminTabBtn').style.display = '';
+  state.selectedDate = new Date(); state.calViewDate = new Date();
   showLoading('Caricamento turni…');
   await getBookings(true);
   hideLoading(); renderCalendar(); renderSlots();
@@ -882,7 +935,7 @@ async function renderAdminTable() {
       const p=b.date.split('-'), d=new Date(+p[0],+p[1]-1,+p[2]);
       const slot=SLOTS.find(s=>s.start===b.hour), slotLabel=slot?slot.start+' – '+slot.end:b.hour;
       const dateStr=`${d.getDate()} ${MONTHS_IT[d.getMonth()]} ${d.getFullYear()}`;
-      html+=`<tr><td><strong>${escHtml(b.user_name||'')}</strong></td><td><span class="badge badge-gold">${escHtml(b.tessera||'–')}</span></td><td>${dateStr}</td><td>${slotLabel}</td><td style="color:var(--ink-muted)">${b.note?escHtml(b.note):'–'}</td><td><button class="btn btn-danger btn-sm" onclick="askDelete('${b.id}','${b.date}_${b.hour}')">Cancella</button></td></tr>`;
+      html+=`<tr><td><strong>${escHtml(b.user_name||'—')}</strong></td><td><span class="badge badge-gold">${escHtml(b.tessera||'–')}</span></td><td>${dateStr}</td><td>${slotLabel}</td><td style="color:var(--ink-muted)">${b.note?escHtml(b.note):'–'}</td><td><button class="btn btn-danger btn-sm" onclick="askDelete('${b.id}','${b.date}_${b.hour}')">Cancella</button></td></tr>`;
     });
   }
   document.getElementById('adminTableBody').innerHTML=html;
