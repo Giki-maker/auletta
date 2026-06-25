@@ -326,8 +326,6 @@ input:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgb
           <div class="form-error" id="loginError"></div>
         </div>
         <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doLogin()">Accedi</button>
-        <div class="divider"></div>
-        <p style="font-size:11px;color:var(--ink-hint);text-align:center">Admin: <strong>admin@auletta.it</strong> / <strong>admin123</strong></p>
       </div>
 
       <!-- REGISTER -->
@@ -400,10 +398,6 @@ input:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgb
           </div>
         </div>
         <div class="room-info">
-          <div class="room-stat">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <span>Capienza <strong>12 posti</strong></span>
-          </div>
           <div class="room-stat">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <span>Turni da <strong>2 ore</strong></span>
@@ -678,7 +672,7 @@ async function enterApp() {
   state.selectedDate=new Date(); state.calViewDate=new Date();
   showLoading('Caricamento turni…');
   await getBookings(true);
-  hideLoading(); renderCalendar(); renderSlots(); renderQuota();
+  hideLoading(); renderCalendar(); renderSlots();
 }
 
 // ── TABS ───────────────────────────────────────────────────────
@@ -693,15 +687,26 @@ function switchTab(tab) {
 }
 
 // ── QUOTA ──────────────────────────────────────────────────────
-function renderQuota() {
+function renderQuota(forDate) {
   if (!state.currentUser) return;
-  const weekKey=getWeekKey(new Date());
-  const used=getUserWeekCount(state.currentUser.id,weekKey,state.bookingsCache);
-  const pct=Math.round((used/MAX_WEEK)*100);
-  const fillCls=used>=MAX_WEEK?'full':used>=MAX_WEEK-2?'warn':'';
+  const refDate = forDate || state.selectedDate;
+  const weekKey = getWeekKey(refDate);
+  const used    = getUserWeekCount(state.currentUser.id, weekKey, state.bookingsCache);
+  const pct     = Math.round((used / MAX_WEEK) * 100);
+  const fillCls = used >= MAX_WEEK ? 'full' : used >= MAX_WEEK - 2 ? 'warn' : '';
+  // label: "questa settimana" se è la settimana corrente, altrimenti le date
+  const todayKey = getWeekKey(new Date());
+  let weekLabel;
+  if (weekKey === todayKey) {
+    weekLabel = 'Turni questa settimana';
+  } else {
+    const mon = new Date(refDate); mon.setDate(refDate.getDate() - (refDate.getDay()+6)%7);
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    weekLabel = `Settimana ${mon.getDate()}/${mon.getMonth()+1} – ${sun.getDate()}/${sun.getMonth()+1}`;
+  }
   document.getElementById('quotaSection').innerHTML=`
     <div class="quota-bar-wrap">
-      <div class="quota-label"><span>Turni questa settimana</span><span><strong>${used}</strong> / ${MAX_WEEK}</span></div>
+      <div class="quota-label"><span>${weekLabel}</span><span><strong>${used}</strong> / ${MAX_WEEK}</span></div>
       <div class="quota-bar"><div class="quota-fill ${fillCls}" style="width:${pct}%"></div></div>
     </div>`;
 }
@@ -750,6 +755,8 @@ function renderSlots() {
   const weekKey=getWeekKey(d);
   const weekUsed=getUserWeekCount(state.currentUser.id,weekKey,bookings);
   const weekFull=weekUsed>=MAX_WEEK, dateOk=isDateBookable(d);
+  // update quota for selected week
+  renderQuota(d);
   const bannerEl=document.getElementById('weekBanner');
   if (!dateOk) {
     bannerEl.innerHTML=`<div class="week-banner info">📅 Le prenotazioni per il mese prossimo aprono il 15 ${MONTHS_IT[new Date().getMonth()]}.</div>`;
@@ -808,7 +815,7 @@ async function confirmBooking() {
   if (getUserWeekCount(state.currentUser.id,weekKey,state.bookingsCache)>=MAX_WEEK) { toast('Limite settimanale raggiunto.','error'); closeModal(); btn.disabled=false; return; }
   try {
     await dbInsertBooking({date:pendingDate,hour:pendingHour,user_id:state.currentUser.id,user_name:state.currentUser.name,tessera:state.currentUser.tessera,note:document.getElementById('modalNote').value.trim()});
-    await getBookings(true); closeModal(); renderSlots(); renderCalendar(); renderQuota();
+    await getBookings(true); closeModal(); renderSlots(); renderCalendar();
     toast('Turno prenotato!','success');
   } catch(e) { toast('Errore: '+e.message,'error'); }
   btn.disabled=false;
@@ -835,7 +842,7 @@ async function confirmDelete() {
   const btn=document.getElementById('confirmDeleteBtn'); btn.disabled=true;
   try {
     await dbDeleteBooking(state.deleteTarget); await getBookings(true);
-    closeDeleteModal(); renderSlots(); renderCalendar(); renderQuota();
+    closeDeleteModal(); renderSlots(); renderCalendar();
     if (state.activeTab==='mybookings') renderMyBookings();
     if (state.activeTab==='admin') renderAdminTable();
     toast('Turno cancellato.','info');
