@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<!-- saved from url=(0055)file:///C:/Users/ricca/Downloads/auletta-booking_2.html -->
+<html lang="it"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prenotazione Auletta</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f7f6f3; --surface: #ffffff; --surface2: #f0efe9;
+    --border: #e2e0d8; --border-strong: #c8c6bc;
+    --text: #1a1a18; --text-muted: #6b6a64; --text-hint: #9b9a94;
+    --accent: #2d5a8e; --accent-light: #e8f0fa; --accent-text: #1a3d66;
+    --success: #2d7a4e; --success-light: #e8f5ee;
+    --danger: #a83232; --danger-light: #faeaea;
+    --warn: #8a5a00; --warn-light: #fef6e4;
+    --radius: 10px; --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 8px rgba(0,0,0,0.04);
+  }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .logo { font-size: 17px; font-weight: 600; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+  .logo svg { width: 22px; height: 22px; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .user-chip { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-muted); }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--accent-light); color: var(--accent-text); font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: background 0.15s; text-decoration: none; background: none; }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-primary:hover { background: var(--accent-text); }
+  .btn-ghost { background: transparent; color: var(--text-muted); border-color: var(--border-strong); }
+  .btn-ghost:hover { background: var(--surface2); }
+  .btn-danger { background: var(--danger-light); color: var(--danger); border-color: #e8c0c0; }
+  .btn-danger:hover { background: #f4d0d0; }
+  .btn-sm { padding: 4px 10px; font-size: 13px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+  .form-group { margin-bottom: 14px; }
+  label { display: block; font-size: 13px; font-weight: 500; color: var(--text-muted); margin-bottom: 5px; }
+  input, select { width: 100%; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); font-size: 15px; background: var(--surface); color: var(--text); outline: none; transition: border-color 0.15s; }
+  input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,90,142,0.1); }
+  .form-error { color: var(--danger); font-size: 12px; margin-top: 4px; }
+  .form-hint { color: var(--text-hint); font-size: 12px; margin-top: 4px; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .auth-wrap { min-height: calc(100vh - 56px); display: flex; align-items: center; justify-content: center; padding: 2rem; }
+  .auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem 2.5rem; width: 100%; max-width: 420px; box-shadow: var(--shadow); }
+  .auth-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+  .auth-tab { flex: 1; padding: 10px; text-align: center; font-size: 14px; font-weight: 500; cursor: pointer; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s; background: none; border-top: none; border-left: none; border-right: none; }
+  .auth-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .auth-title { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .auth-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 1.5rem; }
+  .recover-link { font-size: 12px; color: var(--accent); cursor: pointer; }
+  .recover-link:hover { text-decoration: underline; }
+  .recovery-box { background: var(--accent-light); border: 1px solid #b8d0ef; border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 14px; font-size: 13px; color: var(--accent-text); }
+  .app-layout { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; align-items: start; }
+  .sidebar-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow); margin-bottom: 1rem; }
+  .sidebar-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-hint); margin-bottom: 1rem; }
+  .room-info { display: flex; flex-direction: column; gap: 8px; }
+  .room-stat { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  .room-stat svg { color: var(--accent); flex-shrink: 0; }
+  .room-stat span { color: var(--text-muted); }
+  .quota-bar-wrap { margin-top: 4px; }
+  .quota-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+  .quota-bar { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .quota-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.3s; }
+  .quota-fill.warn { background: #e08c00; }
+  .quota-fill.full { background: var(--danger); }
+  .date-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .date-nav button { background: none; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); width: 30px; height: 30px; cursor: pointer; color: var(--text-muted); font-size: 16px; display: flex; align-items: center; justify-content: center; }
+  .date-nav button:hover { background: var(--surface2); }
+  .date-display { font-size: 14px; font-weight: 600; text-align: center; }
+  .mini-cal { width: 100%; border-collapse: collapse; }
+  .mini-cal th { font-size: 11px; font-weight: 600; color: var(--text-hint); text-align: center; padding: 4px 2px; }
+  .mini-cal td { text-align: center; padding: 3px 2px; }
+  .cal-day { width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; transition: background 0.1s; color: var(--text); position: relative; }
+  .cal-day:hover { background: var(--surface2); }
+  .cal-day.today { font-weight: 600; color: var(--accent); }
+  .cal-day.selected { background: var(--accent); color: #fff !important; font-weight: 600; }
+  .cal-day.other-month { color: var(--text-hint); }
+  .cal-day.not-bookable { color: var(--text-hint); cursor: default; }
+  .cal-day.not-bookable:hover { background: none; }
+  .cal-day.has-booking::after { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+  .cal-day.selected.has-booking::after { background: rgba(255,255,255,0.7); }
+  .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .main-date { font-size: 20px; font-weight: 600; }
+  .main-dow { font-size: 14px; color: var(--text-muted); }
+  .slots-grid { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .slot-row { display: grid; grid-template-columns: 110px 1fr auto; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); gap: 12px; transition: background 0.1s; }
+  .slot-row:last-child { border-bottom: none; }
+  .slot-time { font-size: 13px; font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .slot-info { min-width: 0; }
+  .slot-name { font-size: 14px; font-weight: 500; }
+  .slot-note { font-size: 12px; color: var(--text-muted); }
+  .slot-free:hover { background: var(--accent-light); cursor: pointer; }
+  .slot-mine { background: var(--success-light); }
+  .slot-other { background: var(--surface2); }
+  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .badge-free { background: transparent; color: var(--text-hint); border: 1px solid var(--border); }
+  .badge-mine { background: var(--success-light); color: var(--success); border: 1px solid #b8e0c8; }
+  .badge-other { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border-strong); }
+  .badge-warn { background: var(--warn-light); color: var(--warn); border: 1px solid #e8d080; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 1rem; }
+  .modal-overlay.hidden { display: none; }
+  .modal { background: var(--surface); border-radius: var(--radius); padding: 1.75rem; width: 100%; max-width: 440px; box-shadow: 0 8px 32px rgba(0,0,0,0.16); }
+  .modal-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .modal-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 1.5rem; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem; }
+  .bookings-list { display: flex; flex-direction: column; gap: 10px; }
+  .booking-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: var(--shadow); }
+  .booking-card.past { opacity: 0.55; }
+  .booking-date { font-size: 13px; color: var(--text-muted); }
+  .booking-time { font-size: 15px; font-weight: 600; }
+  .booking-note { font-size: 13px; color: var(--text-muted); }
+  .admin-table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow); }
+  .admin-table th { text-align: left; padding: 10px 14px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-hint); border-bottom: 1px solid var(--border); background: var(--surface2); }
+  .admin-table td { padding: 10px 14px; font-size: 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .admin-table tr:last-child td { border-bottom: none; }
+  .nav-tabs { display: flex; gap: 4px; background: var(--surface2); border-radius: var(--radius-sm); padding: 4px; margin-bottom: 1.5rem; }
+  .nav-tab { padding: 7px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; color: var(--text-muted); border: none; background: none; transition: background 0.15s, color 0.15s; }
+  .nav-tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+  .toast-wrap { position: fixed; bottom: 2rem; right: 2rem; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
+  .toast { padding: 10px 16px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: slideIn 0.2s ease; max-width: 300px; }
+  .toast-success { background: var(--success); color: #fff; }
+  .toast-error { background: var(--danger); color: #fff; }
+  .toast-info { background: var(--accent); color: #fff; }
+  .toast-warn { background: #e08c00; color: #fff; }
+  @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-muted); font-size: 14px; }
+  .empty-state svg { margin-bottom: 12px; opacity: 0.3; }
+  .divider { height: 1px; background: var(--border); margin: 1rem 0; }
+  .week-banner { display: flex; align-items: center; justify-content: space-between; border-radius: var(--radius-sm); padding: 8px 14px; margin-bottom: 1rem; font-size: 13px; }
+  .week-banner.info { background: var(--accent-light); border: 1px solid #b8d0ef; color: var(--accent-text); }
+  .week-banner.warn { background: var(--warn-light); border: 1px solid #e8d080; color: var(--warn); }
+  .week-banner.full { background: var(--danger-light); border: 1px solid #e8c0c0; color: var(--danger); }
+  .loading-overlay { position: fixed; inset: 0; background: rgba(247,246,243,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 500; gap: 12px; font-size: 14px; color: var(--text-muted); }
+  .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 700px) { .app-layout { grid-template-columns: 1fr; } .auth-card { padding: 1.5rem; } }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay" style="display: none;">
+  <div class="spinner"></div>
+  <span id="loadingMsg">Connessione al database…</span>
+</div>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+      <path d="M8 3v4M16 3v4M3 11h18"></path>
+    </svg>
+    Auletta
+  </div>
+  <div class="header-right" id="headerRight"></div>
+</header>
+
+<!-- AUTH -->
+<div class="page active" id="pageAuth">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab(&#39;login&#39;)">Accedi</button>
+        <button class="auth-tab" id="tabRegister" onclick="switchAuthTab(&#39;register&#39;)">Registrati</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="formLogin">
+        <p class="auth-title">Bentornato</p>
+        <p class="auth-sub">Accedi per prenotare l'auletta.</p>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="nome@example.com">
+        </div>
+        <div class="form-group">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+            <label style="margin:0">Password</label>
+            <span class="recover-link" onclick="switchAuthTab(&#39;recover&#39;)">Password dimenticata?</span>
+          </div>
+          <input type="password" id="loginPassword" placeholder="••••••••">
+          <div class="form-error" id="loginError"></div>
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="doLogin()">Accedi</button>
+        <div class="divider"></div>
+        <p style="font-size:12px;color:var(--text-hint);text-align:center">Admin demo: <strong>admin@auletta.it</strong> / <strong>admin123</strong></p>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="formRegister" style="display:none">
+        <p class="auth-title">Crea account</p>
+        <p class="auth-sub">Registrati per iniziare a prenotare.</p>
+        <div class="form-group">
+          <label>Nome e cognome</label>
+          <input type="text" id="regName" placeholder="Mario Rossi">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="regEmail" placeholder="nome@example.com">
+        </div>
+        <div class="form-group">
+          <label>Numero di tessera</label>
+          <input type="text" id="regTessera" placeholder="Es. T-00123">
+          <div class="form-hint">Trovi il numero sulla tua tessera associativa.</div>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="regPassword" placeholder="min. 6 caratteri">
+          <div class="form-error" id="regError"></div>
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="doRegister()">Crea account</button>
+      </div>
+
+      <!-- RECOVER -->
+      <div id="formRecover" style="display:none">
+        <p class="auth-title">Recupera password</p>
+        <p class="auth-sub">Inserisci email e numero di tessera per recuperare la tua password.</p>
+        <div id="recoverResult"></div>
+        <div id="recoverFormFields">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="recEmail" placeholder="nome@example.com">
+          </div>
+          <div class="form-group">
+            <label>Numero di tessera</label>
+            <input type="text" id="recTessera" placeholder="Es. T-00123">
+            <div class="form-error" id="recError"></div>
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="doRecover()">Mostra password</button>
+        </div>
+        <div style="margin-top:12px;text-align:center">
+          <span class="recover-link" onclick="switchAuthTab(&#39;login&#39;)">← Torna al login</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="page" id="pageApp">
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-card">
+        <div class="sidebar-title">Auletta A</div>
+        <div class="room-info">
+          <div class="room-stat">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <span>Capienza: <strong>12 persone</strong></span>
+          </div>
+          <div class="room-stat">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <span>Fasce: <strong>2 ore</strong></span>
+          </div>
+          <div class="room-stat">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            <span>Proiettore, Wi-Fi</span>
+          </div>
+        </div>
+        <div style="margin-top:14px" id="quotaSection"></div>
+      </div>
+      <div class="sidebar-card">
+        <div class="date-nav">
+          <button onclick="changeMonth(-1)">‹</button>
+          <div class="date-display" id="calMonthLabel"></div>
+          <button onclick="changeMonth(1)">›</button>
+        </div>
+        <table class="mini-cal">
+          <thead><tr><th>Lu</th><th>Ma</th><th>Me</th><th>Gi</th><th>Ve</th><th>Sa</th><th>Do</th></tr></thead>
+          <tbody id="calBody"></tbody>
+        </table>
+      </div>
+    </aside>
+
+    <main>
+      <div class="nav-tabs">
+        <button class="nav-tab active" onclick="switchTab(&#39;calendar&#39;)">Prenota</button>
+        <button class="nav-tab" onclick="switchTab(&#39;mybookings&#39;)">Le mie prenotazioni</button>
+        <button class="nav-tab" id="adminTabBtn" style="display:none" onclick="switchTab(&#39;admin&#39;)">Gestione</button>
+      </div>
+
+      <div id="tabCalendar">
+        <div class="main-header">
+          <div>
+            <div class="main-date" id="mainDateLabel"></div>
+            <div class="main-dow" id="mainDowLabel"></div>
+          </div>
+        </div>
+        <div id="weekBanner"></div>
+        <div class="slots-grid" id="slotsGrid"></div>
+      </div>
+
+      <div id="tabMybookings" style="display:none">
+        <div class="bookings-list" id="myBookingsList"></div>
+      </div>
+
+      <div id="tabAdmin" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <h3 style="font-size:16px;font-weight:600">Tutte le prenotazioni</h3>
+          <button class="btn btn-ghost btn-sm" onclick="renderAdminTable()">↻ Aggiorna</button>
+        </div>
+        <table class="admin-table">
+          <thead><tr><th>Utente</th><th>Tessera</th><th>Data</th><th>Fascia oraria</th><th>Note</th><th>Azione</th></tr></thead>
+          <tbody id="adminTableBody"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- BOOKING MODAL -->
+<div class="modal-overlay hidden" id="bookingModal">
+  <div class="modal">
+    <div class="modal-title">Prenota auletta</div>
+    <div class="modal-sub" id="modalSub"></div>
+    <div class="form-group">
+      <label>Note (opzionale)</label>
+      <input type="text" id="modalNote" placeholder="Es. riunione progetto, studio gruppo…">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Annulla</button>
+      <button class="btn btn-primary" id="confirmBookingBtn" onclick="confirmBooking()">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div class="modal-overlay hidden" id="deleteModal">
+  <div class="modal">
+    <div class="modal-title">Cancella prenotazione</div>
+    <div class="modal-sub" id="deleteModalSub"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">Annulla</button>
+      <button class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">Sì, cancella</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────────────
+const SUPA_URL  = 'https://kxfltpazgsdtohcnxwlt.supabase.co';
+const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4Zmx0cGF6Z3NkdG9oY254d2x0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDM5NDksImV4cCI6MjA5Nzk3OTk0OX0.0HBM_9detiVSZhg7OdcRUptJbXmBob2M6gnhvgWWleE';
+const MAX_WEEK  = 7;
+const SLOTS = [
+  { start: '08:00', end: '10:00' },
+  { start: '10:00', end: '12:00' },
+  { start: '13:00', end: '15:00' },
+  { start: '15:00', end: '17:00' },
+  { start: '17:00', end: '19:00' },
+  { start: '19:00', end: '21:00' },
+  { start: '21:00', end: '23:00' },
+];
+const DAYS_IT   = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+const MONTHS_IT = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+
+// ── STATE ──────────────────────────────────────────────────────
+let state = {
+  currentUser: null,
+  selectedDate: new Date(),
+  calViewDate: new Date(),
+  deleteTarget: null,
+  activeTab: 'calendar',
+  bookingsCache: [],
+  cacheDate: null
+};
+let pendingDate, pendingHour;
+
+// ── SUPABASE API ───────────────────────────────────────────────
+async function supa(method, table, body, params) {
+  let url = `${SUPA_URL}/rest/v1/${table}`;
+  if (params) url += '?' + new URLSearchParams(params).toString();
+  const opts = {
+    method,
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(url, opts);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || err.details || 'Errore API');
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+async function dbGetUsers()       { return supa('GET', 'users', null, { select: '*' }); }
+async function dbGetUser(email)   { return supa('GET', 'users', null, { email: `eq.${email}`, select: '*' }); }
+async function dbInsertUser(u)    { return supa('POST', 'users', u); }
+async function dbGetBookings()    { return supa('GET', 'bookings', null, { select: '*', order: 'date.asc,hour.asc' }); }
+async function dbInsertBooking(b) { return supa('POST', 'bookings', b); }
+async function dbDeleteBooking(id){ return supa('DELETE', 'bookings', null, { id: `eq.${id}` }); }
+
+// cache bookings for 30s to avoid hammering the DB on every render
+async function getBookings(force) {
+  const now = Date.now();
+  if (!force && state.cacheDate && (now - state.cacheDate) < 30000) return state.bookingsCache;
+  state.bookingsCache = await dbGetBookings();
+  state.cacheDate = now;
+  return state.bookingsCache;
+}
+
+// ── DATE HELPERS ───────────────────────────────────────────────
+function fmtDate(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function getWeekKey(d) {
+  const date = new Date(d); const day = (date.getDay()+6)%7;
+  const mon = new Date(date); mon.setDate(date.getDate()-day); return fmtDate(mon);
+}
+function isDateBookable(d) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(d); target.setHours(0,0,0,0);
+  if (target < today) return false;
+  const curY=today.getFullYear(), curM=today.getMonth();
+  const targY=target.getFullYear(), targM=target.getMonth();
+  if (targY===curY && targM===curM) return true;
+  const nextM=(curM+1)%12, nextY=curM===11?curY+1:curY;
+  if (targY===nextY && targM===nextM) return today.getDate()>=15;
+  return false;
+}
+function getUserWeekCount(userId, weekKey, bookings) {
+  return bookings.filter(b => b.user_id===userId && getWeekKey(new Date(b.date+'T00:00:00'))===weekKey).length;
+}
+
+// ── LOADING ────────────────────────────────────────────────────
+function showLoading(msg) {
+  document.getElementById('loadingMsg').textContent = msg || 'Caricamento…';
+  document.getElementById('loadingOverlay').style.display = 'flex';
+}
+function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+
+// ── AUTH TABS ──────────────────────────────────────────────────
+function switchAuthTab(tab) {
+  ['login','register','recover'].forEach(t => {
+    document.getElementById('tabLogin').classList.toggle('active', t==='login'&&tab==='login');
+    document.getElementById('tabRegister').classList.toggle('active', t==='register'&&tab==='register');
+    document.getElementById('formLogin').style.display    = tab==='login'    ? '' : 'none';
+    document.getElementById('formRegister').style.display = tab==='register' ? '' : 'none';
+    document.getElementById('formRecover').style.display  = tab==='recover'  ? '' : 'none';
+  });
+}
+
+// ── LOGIN ──────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  if (!email || !pass) { errEl.textContent = 'Compila tutti i campi.'; return; }
+  showLoading('Accesso in corso…');
+  try {
+    const users = await dbGetUser(email);
+    if (!users.length || users[0].password !== pass) {
+      errEl.textContent = 'Email o password non corretti.';
+      hideLoading(); return;
+    }
+    errEl.textContent = '';
+    state.currentUser = users[0];
+    await enterApp();
+  } catch(e) {
+    errEl.textContent = 'Errore di connessione: ' + e.message;
+    hideLoading();
+  }
+}
+
+// ── REGISTER ───────────────────────────────────────────────────
+async function doRegister() {
+  const name    = document.getElementById('regName').value.trim();
+  const email   = document.getElementById('regEmail').value.trim();
+  const tessera = document.getElementById('regTessera').value.trim();
+  const pass    = document.getElementById('regPassword').value;
+  const errEl   = document.getElementById('regError');
+  if (!name)    { errEl.textContent = 'Inserisci il tuo nome.'; return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = 'Email non valida.'; return; }
+  if (!tessera) { errEl.textContent = 'Inserisci il numero di tessera.'; return; }
+  if (pass.length < 6) { errEl.textContent = 'Password di almeno 6 caratteri.'; return; }
+  showLoading('Creazione account…');
+  try {
+    const existing = await dbGetUser(email);
+    if (existing.length) { errEl.textContent = 'Email già registrata.'; hideLoading(); return; }
+    const allUsers = await dbGetUsers();
+    if (allUsers.find(u => u.tessera === tessera && u.tessera !== 'ADMIN-0')) {
+      errEl.textContent = 'Numero di tessera già registrato.'; hideLoading(); return;
+    }
+    const newUser = await dbInsertUser({ name, email, tessera, password: pass, role: 'user' });
+    errEl.textContent = '';
+    state.currentUser = newUser[0];
+    toast('Account creato con successo!', 'success');
+    await enterApp();
+  } catch(e) {
+    errEl.textContent = 'Errore: ' + e.message;
+    hideLoading();
+  }
+}
+
+// ── RECOVER ────────────────────────────────────────────────────
+async function doRecover() {
+  const email   = document.getElementById('recEmail').value.trim();
+  const tessera = document.getElementById('recTessera').value.trim();
+  const errEl   = document.getElementById('recError');
+  showLoading('Ricerca account…');
+  try {
+    const users = await dbGetUser(email);
+    const user  = users.find(u => u.tessera === tessera);
+    hideLoading();
+    if (!user) { errEl.textContent = 'Nessun account corrisponde a questi dati.'; return; }
+    errEl.textContent = '';
+    document.getElementById('recoverFormFields').style.display = 'none';
+    document.getElementById('recoverResult').innerHTML = `
+      <div class="recovery-box">
+        <strong>Password trovata!</strong><br>
+        Account: <em>${escHtml(user.email)}</em><br>
+        Password: <strong>${escHtml(user.password)}</strong>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:8px" onclick="switchAuthTab('login')">Torna al login</button>
+    `;
+  } catch(e) {
+    errEl.textContent = 'Errore: ' + e.message;
+    hideLoading();
+  }
+}
+
+// ── LOGOUT ─────────────────────────────────────────────────────
+function doLogout() {
+  state.currentUser = null;
+  state.bookingsCache = []; state.cacheDate = null;
+  document.getElementById('pageApp').classList.remove('active');
+  document.getElementById('pageAuth').classList.add('active');
+  document.getElementById('headerRight').innerHTML = '';
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('recoverFormFields').style.display = '';
+  document.getElementById('recoverResult').innerHTML = '';
+  switchAuthTab('login');
+}
+
+// ── ENTER APP ──────────────────────────────────────────────────
+async function enterApp() {
+  document.getElementById('pageAuth').classList.remove('active');
+  document.getElementById('pageApp').classList.add('active');
+  const u = state.currentUser;
+  const initials = u.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('headerRight').innerHTML = `
+    <div class="user-chip">
+      <div class="avatar">${initials}</div>
+      <span>${escHtml(u.name)}</span>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="doLogout()">Esci</button>
+  `;
+  if (u.role==='admin') document.getElementById('adminTabBtn').style.display='';
+  state.selectedDate = new Date();
+  state.calViewDate  = new Date();
+  showLoading('Caricamento prenotazioni…');
+  await getBookings(true);
+  hideLoading();
+  renderCalendar();
+  renderSlots();
+  renderQuota();
+}
+
+// ── TAB NAV ────────────────────────────────────────────────────
+function switchTab(tab) {
+  state.activeTab = tab;
+  document.getElementById('tabCalendar').style.display   = tab==='calendar'   ? '' : 'none';
+  document.getElementById('tabMybookings').style.display = tab==='mybookings' ? '' : 'none';
+  document.getElementById('tabAdmin').style.display      = tab==='admin'      ? '' : 'none';
+  document.querySelectorAll('.nav-tab').forEach((el,i) => {
+    el.classList.toggle('active', ['calendar','mybookings','admin'][i]===tab);
+  });
+  if (tab==='mybookings') renderMyBookings();
+  if (tab==='admin')      renderAdminTable();
+}
+
+// ── QUOTA ──────────────────────────────────────────────────────
+function renderQuota() {
+  if (!state.currentUser) return;
+  const weekKey = getWeekKey(new Date());
+  const used    = getUserWeekCount(state.currentUser.id, weekKey, state.bookingsCache);
+  const pct     = Math.round((used/MAX_WEEK)*100);
+  const fillCls = used>=MAX_WEEK ? 'full' : used>=MAX_WEEK-2 ? 'warn' : '';
+  document.getElementById('quotaSection').innerHTML = `
+    <div class="quota-bar-wrap">
+      <div class="quota-label"><span>Slot questa settimana</span><span><strong>${used}</strong> / ${MAX_WEEK}</span></div>
+      <div class="quota-bar"><div class="quota-fill ${fillCls}" style="width:${pct}%"></div></div>
+    </div>
+  `;
+}
+
+// ── CALENDAR ───────────────────────────────────────────────────
+function changeMonth(delta) {
+  state.calViewDate = new Date(state.calViewDate.getFullYear(), state.calViewDate.getMonth()+delta, 1);
+  renderCalendar();
+}
+function renderCalendar() {
+  const v = state.calViewDate;
+  document.getElementById('calMonthLabel').textContent = MONTHS_IT[v.getMonth()]+' '+v.getFullYear();
+  const bookedDates = new Set(state.bookingsCache.map(b=>b.date));
+  const firstDay = new Date(v.getFullYear(),v.getMonth(),1);
+  const lastDay  = new Date(v.getFullYear(),v.getMonth()+1,0);
+  let startDow = (firstDay.getDay()+6)%7;
+  const today  = fmtDate(new Date());
+  const selStr = fmtDate(state.selectedDate);
+  let html='', dayCount=1-startDow;
+  for (let row=0;row<6;row++) {
+    html+='<tr>';
+    for (let col=0;col<7;col++) {
+      const d=new Date(v.getFullYear(),v.getMonth(),dayCount);
+      const dStr=fmtDate(d);
+      const isThisMonth=d.getMonth()===v.getMonth();
+      const bookable=isDateBookable(d);
+      let cls='cal-day';
+      if(!isThisMonth) cls+=' other-month';
+      if(!bookable) cls+=' not-bookable';
+      if(dStr===today)  cls+=' today';
+      if(dStr===selStr) cls+=' selected';
+      if(bookedDates.has(dStr)) cls+=' has-booking';
+      html+=`<td><span class="${cls}" onclick="selectDate('${dStr}')">${d.getDate()}</span></td>`;
+      dayCount++;
+    }
+    html+='</tr>';
+    if(dayCount>lastDay.getDate()&&row>=4) break;
+  }
+  document.getElementById('calBody').innerHTML=html;
+}
+function selectDate(dStr) {
+  const parts=dStr.split('-');
+  state.selectedDate=new Date(+parts[0],+parts[1]-1,+parts[2]);
+  state.calViewDate=new Date(state.selectedDate);
+  renderCalendar(); renderSlots(); switchTab('calendar');
+}
+
+// ── SLOTS ──────────────────────────────────────────────────────
+function renderSlots() {
+  const d=state.selectedDate, dStr=fmtDate(d);
+  document.getElementById('mainDateLabel').textContent=d.getDate()+' '+MONTHS_IT[d.getMonth()]+' '+d.getFullYear();
+  document.getElementById('mainDowLabel').textContent=DAYS_IT[d.getDay()];
+  const bookings=state.bookingsCache;
+  const now=new Date();
+  const weekKey=getWeekKey(d);
+  const weekUsed=getUserWeekCount(state.currentUser.id,weekKey,bookings);
+  const weekFull=weekUsed>=MAX_WEEK;
+  const dateOk=isDateBookable(d);
+  const bannerEl=document.getElementById('weekBanner');
+  if (!dateOk) {
+    bannerEl.innerHTML=`<div class="week-banner info">📅 Le prenotazioni per il mese prossimo aprono il 15 ${MONTHS_IT[new Date().getMonth()]}.</div>`;
+  } else if (weekFull) {
+    bannerEl.innerHTML=`<div class="week-banner full">⚠ Limite di ${MAX_WEEK} slot raggiunto per questa settimana.</div>`;
+  } else if (weekUsed>=MAX_WEEK-2) {
+    bannerEl.innerHTML=`<div class="week-banner warn">Hai usato ${weekUsed}/${MAX_WEEK} slot questa settimana. Ne rimangono ${MAX_WEEK-weekUsed}.</div>`;
+  } else {
+    bannerEl.innerHTML='';
+  }
+  let html='';
+  SLOTS.forEach(slot => {
+    const slotKey=dStr+'_'+slot.start;
+    const existing=bookings.find(b=>b.date===dStr&&b.hour===slot.start);
+    const endH=parseInt(slot.end.split(':')[0]);
+    const slotEnd=new Date(d.getFullYear(),d.getMonth(),d.getDate(),endH,0,0);
+    const isPast=slotEnd<=now;
+    if (existing) {
+      const isMe=existing.user_id===state.currentUser.id;
+      const rowCls=isMe?'slot-row slot-mine':'slot-row slot-other';
+      const badge=isMe?'<span class="badge badge-mine">Tua</span>':'<span class="badge badge-other">Occupata</span>';
+      const canCancel=isMe&&!isPast;
+      const cancelBtn=canCancel?`<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();askDelete('${existing.id}','${slotKey}')">Cancella</button>`:'';
+      const displayName=isMe?'Tu':(state.currentUser.role==='admin'?escHtml(existing.user_name):'Occupata');
+      const note=existing.note?`<div class="slot-note">${escHtml(existing.note)}</div>`:'';
+      html+=`<div class="${rowCls}"><div class="slot-time">${slot.start} – ${slot.end}</div><div class="slot-info"><div class="slot-name">${displayName}</div>${note}</div><div style="display:flex;align-items:center;gap:8px">${badge}${cancelBtn}</div></div>`;
+    } else if (isPast) {
+      html+=`<div class="slot-row"><div class="slot-time">${slot.start} – ${slot.end}</div><div class="slot-info"><div class="slot-name" style="color:var(--text-hint)">Passata</div></div><span style="font-size:12px;color:var(--text-hint)">—</span></div>`;
+    } else if (!dateOk) {
+      html+=`<div class="slot-row"><div class="slot-time">${slot.start} – ${slot.end}</div><div class="slot-info"><div class="slot-name" style="color:var(--text-hint)">Non ancora prenotabile</div></div><span class="badge badge-free">Dal 15</span></div>`;
+    } else if (weekFull) {
+      html+=`<div class="slot-row"><div class="slot-time">${slot.start} – ${slot.end}</div><div class="slot-info"><div class="slot-name" style="color:var(--text-hint)">Libera</div></div><span class="badge badge-warn">Limite raggiunto</span></div>`;
+    } else {
+      html+=`<div class="slot-row slot-free" onclick="openBooking('${dStr}','${slot.start}')"><div class="slot-time">${slot.start} – ${slot.end}</div><div class="slot-info"><div class="slot-name" style="color:var(--text-hint)">Libera</div></div><div onclick="event.stopPropagation()"><button class="btn btn-primary btn-sm" onclick="openBooking('${dStr}','${slot.start}')">Prenota</button></div></div>`;
+    }
+  });
+  document.getElementById('slotsGrid').innerHTML=html;
+}
+
+// ── BOOKING MODAL ──────────────────────────────────────────────
+function openBooking(date,startHour) {
+  const parts=date.split('-');
+  const d=new Date(+parts[0],+parts[1]-1,+parts[2]);
+  const slot=SLOTS.find(s=>s.start===startHour);
+  document.getElementById('modalSub').textContent=DAYS_IT[d.getDay()]+', '+d.getDate()+' '+MONTHS_IT[d.getMonth()]+' '+d.getFullYear()+'  ·  '+slot.start+' – '+slot.end;
+  document.getElementById('modalNote').value='';
+  pendingDate=date; pendingHour=startHour;
+  document.getElementById('bookingModal').classList.remove('hidden');
+}
+function closeModal() { document.getElementById('bookingModal').classList.add('hidden'); }
+
+async function confirmBooking() {
+  const btn=document.getElementById('confirmBookingBtn');
+  btn.disabled=true;
+  const d=new Date(pendingDate+'T00:00:00');
+  if (!isDateBookable(d)) { toast('Data non prenotabile.','error'); closeModal(); btn.disabled=false; return; }
+  const weekKey=getWeekKey(d);
+  await getBookings(true);
+  const existing=state.bookingsCache.find(b=>b.date===pendingDate&&b.hour===pendingHour);
+  if (existing) { toast('Slot già occupato da qualcun altro.','error'); closeModal(); btn.disabled=false; renderSlots(); return; }
+  const weekUsed=getUserWeekCount(state.currentUser.id,weekKey,state.bookingsCache);
+  if (weekUsed>=MAX_WEEK) { toast('Limite settimanale di '+MAX_WEEK+' slot raggiunto.','error'); closeModal(); btn.disabled=false; return; }
+  try {
+    await dbInsertBooking({ date:pendingDate, hour:pendingHour, user_id:state.currentUser.id, user_name:state.currentUser.name, tessera:state.currentUser.tessera, note:document.getElementById('modalNote').value.trim() });
+    await getBookings(true);
+    closeModal(); renderSlots(); renderCalendar(); renderQuota();
+    toast('Prenotazione confermata!','success');
+  } catch(e) {
+    toast('Errore: '+e.message,'error');
+  }
+  btn.disabled=false;
+}
+
+// ── DELETE MODAL ───────────────────────────────────────────────
+function askDelete(bookingId, slotKey) {
+  const [date,hour]=slotKey.split(/_(.+)/);
+  const parts=date.split('-');
+  const d=new Date(+parts[0],+parts[1]-1,+parts[2]);
+  const slot=SLOTS.find(s=>s.start===hour);
+  if (slot) {
+    const slotEnd=new Date(d.getFullYear(),d.getMonth(),d.getDate(),parseInt(slot.end),0,0);
+    if (slotEnd<=new Date()&&state.currentUser.role!=='admin') { toast('Non puoi cancellare prenotazioni passate.','error'); return; }
+  }
+  state.deleteTarget=bookingId;
+  const slotLabel=slot?slot.start+' – '+slot.end:hour;
+  document.getElementById('deleteModalSub').textContent='Vuoi cancellare la prenotazione del '+DAYS_IT[d.getDay()]+' '+d.getDate()+' '+MONTHS_IT[d.getMonth()]+' ore '+slotLabel+'?';
+  document.getElementById('deleteModal').classList.remove('hidden');
+}
+function closeDeleteModal() { document.getElementById('deleteModal').classList.add('hidden'); state.deleteTarget=null; }
+
+async function confirmDelete() {
+  if (!state.deleteTarget) return;
+  const btn=document.getElementById('confirmDeleteBtn');
+  btn.disabled=true;
+  try {
+    await dbDeleteBooking(state.deleteTarget);
+    await getBookings(true);
+    closeDeleteModal(); renderSlots(); renderCalendar(); renderQuota();
+    if (state.activeTab==='mybookings') renderMyBookings();
+    if (state.activeTab==='admin')      renderAdminTable();
+    toast('Prenotazione cancellata.','info');
+  } catch(e) {
+    toast('Errore: '+e.message,'error');
+  }
+  btn.disabled=false;
+}
+
+// ── MY BOOKINGS ────────────────────────────────────────────────
+function renderMyBookings() {
+  const bookings=state.bookingsCache.filter(b=>b.user_id===state.currentUser.id).sort((a,b)=>(a.date+a.hour)<(b.date+b.hour)?1:-1);
+  const now=new Date();
+  let html='';
+  if (!bookings.length) {
+    html=`<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><p>Nessuna prenotazione ancora.</p></div>`;
+  } else {
+    bookings.forEach(b=>{
+      const parts=b.date.split('-');
+      const d=new Date(+parts[0],+parts[1]-1,+parts[2]);
+      const slot=SLOTS.find(s=>s.start===b.hour);
+      const slotEnd=new Date(d.getFullYear(),d.getMonth(),d.getDate(),slot?parseInt(slot.end):parseInt(b.hour)+2,0,0);
+      const isPast=slotEnd<=now;
+      const slotLabel=slot?slot.start+' – '+slot.end:b.hour;
+      const cancelBtn=!isPast?`<button class="btn btn-danger btn-sm" onclick="askDelete('${b.id}','${b.date}_${b.hour}')">Cancella</button>`:'<span style="font-size:12px;color:var(--text-hint)">Passata</span>';
+      html+=`<div class="booking-card${isPast?' past':''}"><div><div class="booking-date">${DAYS_IT[d.getDay()]}, ${d.getDate()} ${MONTHS_IT[d.getMonth()]} ${d.getFullYear()}</div><div class="booking-time">${slotLabel}</div>${b.note?`<div class="booking-note">${escHtml(b.note)}</div>`:''}</div>${cancelBtn}</div>`;
+    });
+  }
+  document.getElementById('myBookingsList').innerHTML=html;
+}
+
+// ── ADMIN TABLE ────────────────────────────────────────────────
+async function renderAdminTable() {
+  showLoading('Caricamento…');
+  await getBookings(true);
+  hideLoading();
+  const bookings=state.bookingsCache.sort((a,b)=>(a.date+a.hour)<(b.date+b.hour)?1:-1);
+  let html='';
+  if (!bookings.length) {
+    html='<tr><td colspan="6" style="text-align:center;color:var(--text-hint);padding:2rem">Nessuna prenotazione.</td></tr>';
+  } else {
+    bookings.forEach(b=>{
+      const parts=b.date.split('-');
+      const d=new Date(+parts[0],+parts[1]-1,+parts[2]);
+      const slot=SLOTS.find(s=>s.start===b.hour);
+      const slotLabel=slot?slot.start+' – '+slot.end:b.hour;
+      const dateStr=`${d.getDate()} ${MONTHS_IT[d.getMonth()]} ${d.getFullYear()}`;
+      html+=`<tr><td>${escHtml(b.user_name||'')}</td><td style="color:var(--text-muted)">${escHtml(b.tessera||'–')}</td><td>${dateStr}</td><td>${slotLabel}</td><td style="color:var(--text-muted)">${b.note?escHtml(b.note):'–'}</td><td><button class="btn btn-danger btn-sm" onclick="askDelete('${b.id}','${b.date}_${b.hour}')">Cancella</button></td></tr>`;
+    });
+  }
+  document.getElementById('adminTableBody').innerHTML=html;
+}
+
+// ── TOAST ──────────────────────────────────────────────────────
+function toast(msg,type='info') {
+  const el=document.createElement('div');
+  el.className='toast toast-'+type; el.textContent=msg;
+  document.getElementById('toastWrap').appendChild(el);
+  setTimeout(()=>el.remove(),3500);
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeModal();closeDeleteModal();} });
+
+// Init: hide loading
+hideLoading();
+</script>
+
+
+</body></html>
